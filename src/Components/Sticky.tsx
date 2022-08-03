@@ -30,7 +30,6 @@ const Sticky = ({ note, index, changeText, removeSticky, setPosition }) => {
       bounds="parent"
     >
       <div className={classes.sticky}>
-        <p>{note.id}</p>
         <div id="mydivheader">
           <Button
             color="red"
