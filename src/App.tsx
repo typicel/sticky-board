@@ -1,7 +1,6 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import {
-  Group,
   Button,
   MantineProvider,
   Global,
@@ -9,14 +8,17 @@ import {
   ColorScheme,
   AppShell,
 } from "@mantine/core";
+import "./Styles/App.css";
 import { FiSun, FiMoon } from "react-icons/fi";
 import { useHotkeys, useLocalStorage } from "@mantine/hooks";
 import Sticky from "./Components/Sticky";
 
-type StickyType = {
+interface StickyType {
   text: string;
   id: number;
-};
+  left: number;
+  top: number;
+}
 
 const App: React.FC = () => {
   // get notes from local storage or return empty array if no notes stored
@@ -36,10 +38,8 @@ const App: React.FC = () => {
   const toggleColorScheme = (value?: ColorScheme) =>
     setColorScheme(value || (colorScheme === "dark" ? "light" : "dark"));
   useHotkeys([["mod+J", () => toggleColorScheme()]]);
+  // const [dragged, setDragged] = useState<StickyType>();
 
-  const [dragged, setDragged] = useState<StickyType>();
-
-  // Update local storage when new note is added
   useEffect(() => {
     localStorage.setItem("notes", JSON.stringify(notes));
   }, [notes]);
@@ -56,38 +56,33 @@ const App: React.FC = () => {
     let newSticky: StickyType = {
       text: "",
       id: Math.floor(Math.random() * 1000000),
+      left: Math.floor(Math.random() * 100),
+      top: Math.floor(Math.random() * 100),
     };
     copy.push(newSticky);
     setNotes(copy);
   };
 
   const removeSticky = (id: number) => {
+    console.log("in removeSticky: passedin ID was: " + id);
     let copy: StickyType[] = [...notes];
     let index = copy.findIndex((note) => note.id === id);
+
+    console.log("in removeSticky: id found was: " + copy[index]!.id);
 
     copy.splice(index, 1);
     setNotes(copy);
   };
 
-  const onDragStart = (e, index) => {
-    setDragged(notes[index]);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/html", e.target.parentNode);
-    e.dataTransfer.setDragImage(e.target.parentNode, 20, 20);
+  const setPosition = (x: number, y: number, id: number) => {
+    let copy = [...notes];
+    let index = copy.findIndex((note) => note.id === id);
+    let note = copy[index];
+
+    let newNote = { ...note, top: y, left: x };
+    copy[index] = newNote;
+    setNotes(copy);
   };
-
-  const onDragOver = (index) => {
-    const draggedOverItem = notes[index];
-
-    if (draggedOverItem === dragged) return;
-
-    let items: StickyType[] = notes.filter((note) => note !== dragged);
-    items.splice(index, 0, dragged!);
-
-    setNotes(items);
-  };
-
-  const onDragEnd = () => {};
 
   return (
     <ColorSchemeProvider
@@ -100,7 +95,7 @@ const App: React.FC = () => {
         theme={{ colorScheme }}
       >
         <Global
-          styles={(theme) => ({
+          styles={() => ({
             body: {
               margin: "1rem",
             },
@@ -109,39 +104,35 @@ const App: React.FC = () => {
         <AppShell
           className="App"
           header={
-            <Button
-              variant="subtle"
-              color={colorScheme === "dark" ? "" : "dark"}
-              onClick={toggleTheme}
-            >
-              {colorScheme === "dark" ? <FiSun /> : <FiMoon />}
-            </Button>
+            <div style={{ zIndex: 1000 }}>
+              <Button
+                variant="subtle"
+                color={colorScheme === "dark" ? "" : "dark"}
+                onClick={toggleTheme}
+              >
+                {colorScheme === "dark" ? <FiSun /> : <FiMoon />}
+              </Button>
+              <Button
+                color={colorScheme === "dark" ? "" : "dark"}
+                onClick={addSticky}
+                style={{ position: "absolute" }}
+              >
+                Add Sticky
+              </Button>
+            </div>
           }
         >
-          <Group position="center">
-            {notes.map((note, idx) => {
-              return (
-                <div key={note.id} onDragOver={() => onDragOver(idx)}>
-                  <Sticky
-                    note={note}
-                    index={idx}
-                    changeText={changeText}
-                    removeSticky={removeSticky}
-                    onDragStart={onDragStart}
-                    onDragEnd={onDragEnd}
-                  />
-                </div>
-              );
-            })}
-          </Group>
-          <Group position="center" p="xl">
-            <Button
-              color={colorScheme === "dark" ? "" : "dark"}
-              onClick={addSticky}
-            >
-              Add Sticky
-            </Button>
-          </Group>
+          {notes.map((note, idx) => {
+            return (
+              <Sticky
+                note={note}
+                index={idx}
+                changeText={changeText}
+                removeSticky={removeSticky}
+                setPosition={setPosition}
+              />
+            );
+          })}
         </AppShell>
       </MantineProvider>
     </ColorSchemeProvider>

@@ -1,4 +1,7 @@
-.App div .drag {
-  margin-right: 15px;
+#mydivheader {
+  padding: 10px;
   cursor: move;
+  z-index: 10;
+  background-color: #c9c9c9;
+  color: #fff;
 }
